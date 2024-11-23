@@ -16,9 +16,5 @@ export default {
             },
         },
     },
-    safelist: [
-        '-translate-x-64', // Ensure the hidden sidebar state is preserved
-        'translate-x-0',   // Ensure the visible sidebar state is preserved
-    ],
     plugins: [],
 };

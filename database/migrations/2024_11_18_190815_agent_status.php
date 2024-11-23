@@ -11,15 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('case_handlings', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId(\http\Client\Curl\User::class);
-            $table->string('interpreter_Name');
+        Schema::create('agent_status', function (Blueprint $table) {
+            $table->id(); // This is an unsigned big integer by default.
+            $table->string('name')->unique();
+            $table->string('description')->nullable();
             $table->timestamps();
-            $table->dateTime('resolutionDate');
-            $table->string('caseAccepted');
-            $table->string('declineReason');
         });
+
     }
 
     /**
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('case_handlings');
+        Schema::dropIfExists('agent_status');
     }
 };

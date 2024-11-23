@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('queues', function (Blueprint $table) {
+        Schema::create('agent_status_history', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('agent_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('agent_status_id')->constrained('agent_status')->onDelete('cascade');
+            $table->timestamp('changed_at')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->timestamps();
-
-            // Optional unique constraint to prevent duplicate entries for the same agent
-            $table->unique('agent_id');
         });
+
     }
 
     /**
@@ -26,6 +26,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('queues');
+        //
+        Schema::dropIfExists('agent_status_history');
     }
 };

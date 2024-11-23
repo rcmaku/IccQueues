@@ -12,6 +12,7 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $table = 'users';
     /**
      * The attributes that are mass assignable.
      *
@@ -22,6 +23,7 @@ class User extends Authenticatable
         'last_name',
         'email',
         'password',
+        'AgentOrder', // Add AgentOrder to fillable
     ];
 
     /**
@@ -46,4 +48,25 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function agentStatus()
+    {
+        return $this->belongsTo(AgentStatus::class, 'agent_status_id'); // Define the foreign key explicitly if needed
+    }
+
+    public function agentStatusHistory()
+    {
+        return $this->hasMany(AgentStatusHistory::class, 'user_id');
+    }
+
+    public function hasRole($roles)
+    {
+        return $this->roles()->whereIn('roleName', (array) $roles)->exists();
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'agent_roles', 'user_id', 'role_id');
+    }
+
+
 }

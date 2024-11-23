@@ -20,7 +20,13 @@ return new class extends Migration
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
+
+            // Explicitly defining the column type and foreign key
+            $table->unsignedBigInteger('agent_status_id')->nullable(); // Make sure the type matches the 'id' column in agent_status
+            $table->foreign('agent_status_id')->references('id')->on('agent_status')->onDelete('set null');
         });
+
+
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();

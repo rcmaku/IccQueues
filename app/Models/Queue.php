@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Queue extends Model
 {
-    /** @use HasFactory<\Database\Factories\QueueFactory> */
     use HasFactory;
+
+    protected $fillable = ['user_id', 'status_call', 'support_start', 'support_end'];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
