@@ -1,7 +1,16 @@
-{{-- resources/views/report/report.blade.php --}}
 <x-layout :isLoginPage="false">
     <div class="container mx-auto mt-8">
         <h1 class="text-3xl font-semibold text-center mb-6">Queue Interaction Report</h1>
+
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <form method="GET" action="{{ route('report.generate') }}" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -30,7 +39,7 @@
 
             <div class="flex justify-end">
                 <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                    Generate Report
+                    Search
                 </button>
             </div>
         </form>
@@ -42,21 +51,25 @@
             <tr>
                 <th class="py-3 px-4 text-left">User</th>
                 <th class="py-3 px-4 text-left">Interaction Count</th>
-                <th class="py-3 px-4 text-left">Avg Handling Time (s)</th>
+                <th class="py-3 px-4 text-left">Avg Handling Time (HH:MM:SS)</th>
                 <th class="py-3 px-4 text-left">First Interaction Date</th>
                 <th class="py-3 px-4 text-left">Last Interaction Date</th>
             </tr>
             </thead>
             <tbody class="text-gray-700">
-            @foreach ($reportData as $data)
+            @forelse ($reportData as $data)
                 <tr class="hover:bg-gray-50">
                     <td class="py-3 px-4">{{ $data->full_name }} <br><small class="text-gray-500">{{ $data->email }}</small></td>
                     <td class="py-3 px-4">{{ $data->interaction_count }}</td>
-                    <td class="py-3 px-4">{{ $data->avg_handling_time }}</td>
+                    <td class="py-3 px-4">{{ gmdate('H:i:s', $data->avg_handling_time) }}</td>
                     <td class="py-3 px-4">{{ $data->first_interaction_date }}</td>
                     <td class="py-3 px-4">{{ $data->last_interaction_date }}</td>
                 </tr>
-            @endforeach
+            @empty
+                <tr>
+                    <td colspan="5" class="py-3 px-4 text-center text-gray-500">No data available for the selected criteria.</td>
+                </tr>
+            @endforelse
             </tbody>
         </table>
     </div>

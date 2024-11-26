@@ -2,45 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Queue;
-use App\Models\User;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Models\Request;
+use App\Models\User;
+use Illuminate\Http\Request as HttpRequest;
 
 class ReportController extends Controller
 {
-    public function generateReport(Request $request)
+    public function generateReport(HttpRequest $request)
     {
-        // Query the 'queues' table and join with 'users' table
-        $query = Queue::query()
+        // Validate the request parameters
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ], [
+            'end_date.after_or_equal' => 'The end date must be equal to or later than the start date.',
+        ]);
+
+        // Simplified query for testing purposes
+        $query = Request::query()
             ->selectRaw('users.id as user_id, CONCAT(users.first_name, " ", users.last_name) as full_name, users.email')
-            ->selectRaw('COUNT(queues.id) as interaction_count')
-            ->selectRaw('IFNULL(AVG(TIMESTAMPDIFF(SECOND, queues.support_start, queues.support_end)), 0) as avg_handling_time')
-            ->selectRaw('MIN(queues.support_start) as first_interaction_date')
-            ->selectRaw('MAX(queues.support_end) as last_interaction_date')
-            ->join('users', 'queues.user_id', '=', 'users.id')
-            ->whereNotNull('queues.support_start')
-            ->whereNotNull('queues.support_end')
+            ->selectRaw('COUNT(requests.id) as interaction_count')
+            ->selectRaw('IFNULL(AVG(TIMESTAMPDIFF(SECOND, requests.start_time, requests.end_time)), 0) as avg_handling_time')
+            ->selectRaw('MIN(requests.start_time) as first_interaction_date')
+            ->selectRaw('MAX(requests.end_time) as last_interaction_date')
+            ->join('users', 'requests.user_id', '=', 'users.id')
+            // Remove whereNotNull temporarily to check if data exists
             ->groupBy('users.id', 'users.first_name', 'users.last_name', 'users.email');
 
-        // Apply filters if provided
-        if ($request->has('user_id')) {
-            $query->where('users.id', $request->user_id);
-        }
+        // Debugging: Log the SQL query to check the logic
+        \Log::info('SQL Query:', ['query' => $query->toSql(), 'bindings' => $query->getBindings()]);
 
-        if ($request->has('start_date') && $request->has('end_date')) {
-            $startDate = Carbon::parse($request->start_date)->startOfDay();
-            $endDate = Carbon::parse($request->end_date)->endOfDay();
-            $query->whereBetween('queues.support_start', [$startDate, $endDate]);
-        }
-
-        // Execute the query and get the results
+        // Get the data from the query
         $reportData = $query->get();
 
-        // Retrieve all users for the dropdown filter
+        // Debugging: Log the results to check if data is being fetched
+        \Log::info('Report Data:', ['data' => $reportData]);
+
+        // Get all users for use in the view
         $users = User::all();
 
-        // Return the view with the report data and users list
+        // Return the report view with the data
         return view('report.report', compact('reportData', 'users'));
     }
 }

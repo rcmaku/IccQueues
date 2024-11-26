@@ -9,6 +9,8 @@ use App\Models\AgentStatusHistory;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Http\Request as HttpRequest;
+use App\Http\Controllers\RequestController;
+use App\Http\Controllers\TaskController;
 
 // Login routes
 Route::get('/login', function () {
@@ -36,6 +38,10 @@ Route::get('/it-queue', [UsersController::class, 'showUserStatusGrid'])->name('i
 
 Route::post('/update-status', [UsersController::class, 'updateStatus'])->name('updateStatus');
 
+Route::post('/agent/pass', [UsersController::class, 'passToNextUser'])->name('agent.pass');
+
+
+
 Route::post('/logout', function () {
     // Get the currently authenticated user
     $user = Auth::user();
@@ -58,55 +64,58 @@ Route::post('/logout', function () {
     return redirect('/login');
 })->name('logout');
 
-Route::group(['prefix' => 'agent'], function () {
-    Route::get('/', function (HttpRequest $request) {
-        if (!Auth::check() || !Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
-            abort(403, 'Unauthorized');
-        }
-        return app(\App\Http\Controllers\UsersController::class)->index();
-    })->name('agent.index');
+Route::middleware('auth')->group(function () {
+    Route::group(['prefix' => 'agent'], function () {
 
-    Route::get('/create', function (HttpRequest $request) {
-        if (!Auth::check() || !Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
-            abort(403, 'Unauthorized');
-        }
-        return app(\App\Http\Controllers\UsersController::class)->create();
-    })->name('agent.create');
+        Route::get('/', function (HttpRequest $request) {
+            if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
+                abort(403, 'Unauthorized');
+            }
+            return app(\App\Http\Controllers\UsersController::class)->index();
+        })->name('agent.index');
 
-    Route::post('/', function (HttpRequest $request) {
-        if (!Auth::check() || !Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
-            abort(403, 'Unauthorized');
-        }
-        return app(\App\Http\Controllers\UsersController::class)->store($request);
-    })->name('agent.store');
+        Route::get('/create', function (HttpRequest $request) {
+            if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
+                abort(403, 'Unauthorized');
+            }
+            return app(\App\Http\Controllers\UsersController::class)->create();
+        })->name('agent.create');
 
-    Route::get('/{id}', function (HttpRequest $request, $id) {
-        if (!Auth::check() || !Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
-            abort(403, 'Unauthorized');
-        }
-        return app(\App\Http\Controllers\UsersController::class)->show($id);
-    })->name('agent.show');
+        Route::post('/', function (HttpRequest $request) {
+            if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
+                abort(403, 'Unauthorized');
+            }
+            return app(\App\Http\Controllers\UsersController::class)->store($request);
+        })->name('agent.store');
 
-    Route::get('/{id}/edit', function (HttpRequest $request, $id) {
-        if (!Auth::check() || !Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
-            abort(403, 'Unauthorized');
-        }
-        return app(\App\Http\Controllers\UsersController::class)->edit($id);
-    })->name('agent.edit');
+        Route::get('/{id}', function (HttpRequest $request, $id) {
+            if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
+                abort(403, 'Unauthorized');
+            }
+            return app(\App\Http\Controllers\UsersController::class)->show($id);
+        })->name('agent.show');
 
-    Route::put('/{id}', function (HttpRequest $request, $id) {
-        if (!Auth::check() || !Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
-            abort(403, 'Unauthorized');
-        }
-        return app(\App\Http\Controllers\UsersController::class)->update($request, $id);
-    })->name('agent.update');
+        Route::get('/{id}/edit', function (HttpRequest $request, $id) {
+            if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
+                abort(403, 'Unauthorized');
+            }
+            return app(\App\Http\Controllers\UsersController::class)->edit($id);
+        })->name('agent.edit');
 
-    Route::delete('/{id}', function (HttpRequest $request, $id) {
-        if (!Auth::check() || !Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
-            abort(403, 'Unauthorized');
-        }
-        return app(\App\Http\Controllers\UsersController::class)->destroy($id);
-    })->name('agent.destroy');
+        Route::put('/{id}', function (HttpRequest $request, $id) {
+            if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
+                abort(403, 'Unauthorized');
+            }
+            return app(\App\Http\Controllers\UsersController::class)->update($request, $id);
+        })->name('agent.update');
+
+        Route::delete('/{id}', function (HttpRequest $request, $id) {
+            if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
+                abort(403, 'Unauthorized');
+            }
+            return app(\App\Http\Controllers\UsersController::class)->destroy($id);
+        })->name('agent.destroy');
+    });
 });
 
 Route::get('/report', function (HttpRequest $request) {
@@ -203,4 +212,22 @@ Route::get('/check-email', function () {
     $exists = User::where('email', $email)->exists();
     return response()->json(['exists' => $exists]);
 });
+
+Route::delete('agents/{agent}', [UsersController::class, 'destroy'])->name('agents.destroy');
+
+Route::post('/new-request', [RequestController::class, 'store'])->name('newRequest');
+
+Route::get('/queue', [RequestController::class, 'showQueue'])->name('queue.show');
+
+Route::post('/mark-as-available', [UsersController::class, 'completeTask'])->name('markAsAvailable');
+
+Route::post('/tasks/{task}/complete', [TaskController::class, 'markAsComplete'])->name('tasks.complete');
+
+Route::post('/notify-available-users', [UsersController::class, 'notifyAvailableUsers']);
+
+Route::patch('/tasks/{taskId}/complete', [TaskController::class, 'markAsComplete'])->name('requests.complete');
+
+Route::patch('/tasks/skip/{taskId}', [TaskController::class, 'skipTask'])->name('tasks.skip');
+
+
 

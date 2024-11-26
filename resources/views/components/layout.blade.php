@@ -3,27 +3,25 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>ICCQueue</title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- AlpineJS for Dropdown Toggle -->
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 </head>
 <body class="h-full">
 
-<div class="min-h-full flex flex-col lg:flex-row" x-data="{ open: true }">
+<div class="min-h-full flex flex-col lg:flex-row" x-data="{ open: false }">
 
     <!-- Sidebar -->
     <div :class="{'w-64': open, 'w-20': !open}" class="bg-light-subtle text-black-50 space-y-6 py-7 px-2 fixed inset-y-0 left-0 transition-all duration-300">
 
-        <!-- Sidebar Logo and Title -->
+        <!-- Sidebar Logo n Title -->
         <div class="justify-content-between">
             <button @click="open = !open" class="text-white absolute transform p-3 rounded-full hover:bg-gray-200 transition-all duration-300">
                 <svg width="20px" height="20px" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -37,54 +35,39 @@
                 </svg>
             </button>
 
-            <!-- Add a fixed height for the logo container -->
             <div class="text-center h-12 flex items-center justify-center">
-                <!-- Show/hide the logo without changing the container height -->
                 <img src="https://i0.wp.com/iccbpo.com/wp-content/uploads/2024/01/01-LOGO-ICC.png?resize=300%2C92&ssl=1" alt="Logo"
                      :class="{ 'hidden': !open }"
                      class="h-12 w-auto mx-auto">
             </div>
         </div>
 
-        <!-- Navigation -->
+        <!-- Navi -->
         <nav class="space-y-4 mt-6">
             @if (Auth::check())
                 @if (Auth::user()->hasRole(['admin', 'manager']))
                     <a href="/report" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
-                        <!-- SVG and text for Reporting -->
-                        <svg fill="#ff4500" width="34px" height="34px" viewBox="0 0 30.59 30.59" xmlns="http://www.w3.org/2000/svg" stroke="#ff4500" stroke-width="0.00030586">
-                            <!-- SVG content -->
-                        </svg>
+
+                        <svg fill="#374151" width="32px" height="32px" viewBox="0 0 32.00 32.00" version="1.1" xmlns="http://www.w3.org/2000/svg" stroke="#374151" stroke-width="0.00032"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>report</title> <path d="M6 11h4v17h-4v-17zM22 16v12h4v-12h-4zM14 28h4v-24h-4v24z"></path> </g></svg>
                         <span :class="{ 'hidden': !open }" class="text-sm">Reporting</span>
                     </a>
                     <a href="/agent/" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
-                        <!-- SVG and text for Agent -->
-                        <svg fill="#0011ff" height="34px" width="34px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg">
-                            <!-- SVG content -->
-                        </svg>
+                        <svg fill="#374151" width="32px" height="32px" viewBox="0 0 30.586 30.586" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g transform="translate(-546.269 -195.397)"> <path d="M572.138,221.245a15.738,15.738,0,0,0-21.065-.253l-1.322-1.5a17.738,17.738,0,0,1,23.741.28Z"></path> <path d="M561.464,204.152a4.96,4.96,0,1,1-4.96,4.96,4.966,4.966,0,0,1,4.96-4.96m0-2a6.96,6.96,0,1,0,6.96,6.96,6.96,6.96,0,0,0-6.96-6.96Z"></path> <path d="M561.562,197.4a13.293,13.293,0,1,1-13.293,13.293A13.308,13.308,0,0,1,561.562,197.4m0-2a15.293,15.293,0,1,0,15.293,15.293A15.293,15.293,0,0,0,561.562,195.4Z"></path> </g> </g></svg>
                         <span :class="{ 'hidden': !open }" class="text-sm">Agent</span>
                     </a>
                     <a href="/roles/" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
-                        <!-- SVG and text for Roles -->
-                        <svg fill="#4CAF50" width="34px" height="34px" viewBox="0 0 30.59 30.59" xmlns="http://www.w3.org/2000/svg" stroke="#4CAF50" stroke-width="0.00030586">
-                            <!-- SVG content -->
-                        </svg>
+                        <svg width="32px" height="32px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M6 8H6.01M6 16H6.01M6 12H18M6 12C3.79086 12 2 10.2091 2 8C2 5.79086 3.79086 4 6 4H18C20.2091 4 22 5.79086 22 8C22 10.2091 20.2091 12 18 12M6 12C3.79086 12 2 13.7909 2 16C2 18.2091 3.79086 20 6 20H18C20.2091 20 22 18.2091 22 16C22 13.7909 20.2091 12 18 12" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
                         <span :class="{ 'hidden': !open }" class="text-sm">Roles</span>
                     </a>
                 @endif
-                <!-- Other buttons visible to all authenticated users -->
                 <a href="/support" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
-                    <!-- SVG and text for IT-Queue -->
-                    <svg width="34px" height="34px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- SVG content -->
+                    <svg width="32px" height="32px" viewBox="0 0 24 24" id="_24x24_On_Light_Support" data-name="24x24/On Light/Support" xmlns="http://www.w3.org/2000/svg" fill="#374151"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <rect id="view-box" width="24" height="24" fill="none"></rect> <path id="Shape" d="M8,17.751a2.749,2.749,0,0,1,5.127-1.382C15.217,15.447,16,14,16,11.25v-3c0-3.992-2.251-6.75-5.75-6.75S4.5,4.259,4.5,8.25v3.5a.751.751,0,0,1-.75.75h-1A2.753,2.753,0,0,1,0,9.751v-1A2.754,2.754,0,0,1,2.75,6h.478c.757-3.571,3.348-6,7.022-6s6.264,2.429,7.021,6h.478a2.754,2.754,0,0,1,2.75,2.75v1a2.753,2.753,0,0,1-2.75,2.75H17.44A5.85,5.85,0,0,1,13.5,17.84,2.75,2.75,0,0,1,8,17.751Zm1.5,0a1.25,1.25,0,1,0,1.25-1.25A1.251,1.251,0,0,0,9.5,17.751Zm8-6.75h.249A1.251,1.251,0,0,0,19,9.751v-1A1.251,1.251,0,0,0,17.75,7.5H17.5Zm-16-2.25v1A1.251,1.251,0,0,0,2.75,11H3V7.5H2.75A1.251,1.251,0,0,0,1.5,8.751Z" transform="translate(1.75 2.25)" fill="#374151"></path> </g></svg>
                     </svg>
                     <span :class="{ 'hidden': !open }" class="text-sm">IT-Queue</span>
                 </a>
             @else
                 <a href="/login" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
-                    <!-- SVG and text for Login -->
                     <svg width="34px" height="34px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- SVG content -->
                     </svg>
                     <span :class="{ 'hidden': !open }" class="text-sm">Login</span>
                 </a>
@@ -95,20 +78,17 @@
     </div>
 
 
-    <!-- Main Content (flexible) -->
     <div :class="{'ml-64': open, 'ml-20': !open}" class="flex-1 flex flex-col w-full transition-all duration-300">
 
         <nav class="bg-gray-700">
             <div class="mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex h-16 items-center justify-between">
-                    <!-- Menu Button (Visible on small screens) -->
                     <button class="lg:hidden text-white" @click="open = !open">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" class="h-6 w-6" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
 
-                    <!-- User Info or Default Header -->
                     @if (Auth::check())
                         <div class="flex items-center space-x-4 ml-auto relative" x-data="{ open: false }">
                             <p class="text-white text-sm font-semibold">{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}</p>
@@ -151,17 +131,79 @@
         <main class="flex-1 p-6 bg-gray-100">
             {{ $slot }}  <!-- Here is where the content will be injected from views -->
         </main>
+        <div x-data="{ openModal: false }" class="relative">
+
+            <!-- Button to open modal at the bottom right -->
+            <button class="px-4 py-2 bg-blue-500 text-white rounded-lg fixed bottom-4 right-4 z-50" @click.prevent="openModal = true">
+                Create Request
+            </button>
+
+            <!-- Modal -->
+            <div x-show="openModal" x-transition.opacity x-cloak class="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50 z-50">
+                <div class="bg-white rounded-lg p-6 max-w-lg w-full">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Create New Request</h2>
+                        <button @click="openModal = false" class="text-gray-500 hover:text-gray-700">&times;</button>
+                    </div>
+
+                    <!-- Modal Form -->
+                    <form action="{{ route('newRequest') }}" method="POST" id="new-request-form">
+                        @csrf
+
+                        <!-- Title -->
+                        <div class="mb-4">
+                            <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                            <input type="text" id="title" name="title" required class="mt-2 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- Channel -->
+                        <div class="mb-4">
+                            <label for="channel" class="block text-sm font-medium text-gray-700">Channel</label>
+                            <input type="text" id="channel" name="channel" required class="mt-2 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- Request Type -->
+                        <div class="mb-4">
+                            <label for="request-type" class="block text-sm font-medium text-gray-700">Request Type</label>
+                            <select id="request-type" name="request_type" class="mt-2 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="Technical Issue">Technical Issue</option>
+                                <option value="Customer Support">Customer Support</option>
+                            </select>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea id="description" name="description" rows="4" class="mt-2 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" required></textarea>
+                        </div>
+
+                        <!-- Hidden Fields -->
+                        <input type="hidden" name="start_time" value="{{ now() }}"> <!-- Set current timestamp as start_time -->
+                        <input type="hidden" name="status" value="pending"> <!-- Set status to pending -->
+
+                        <!-- Submit Button -->
+                        <div class="flex justify-end">
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Submit Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+
+
+        <script>
+            document.getElementById('new-request-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                // Perform any additional validation or actions before submitting the form, if necessary
+                this.submit(); // Submit the form after validation or actions
+            });
+        </script>
+
+    </div>
     </div>
 </div>
-
-<!-- AlpineJS Script for Sidebar Toggle -->
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('sidebar', () => ({
-            open: true,
-        }))
-    })
-</script>
 
 </body>
 </html>
