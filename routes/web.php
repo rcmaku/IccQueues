@@ -5,6 +5,7 @@ use \App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AgentStatus;
+use App\Models\Role; // Import the Role model
 use App\Models\AgentStatusHistory;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\ReportController;
@@ -37,10 +38,6 @@ Route::get('/fetch-updated-status', [UsersController::class, 'fetchUpdatedStatus
 Route::get('/it-queue', [UsersController::class, 'showUserStatusGrid'])->name('it-queue');
 
 Route::post('/update-status', [UsersController::class, 'updateStatus'])->name('updateStatus');
-
-Route::post('/agent/pass', [UsersController::class, 'passToNextUser'])->name('agent.pass');
-
-
 
 Route::post('/logout', function () {
     // Get the currently authenticated user
@@ -150,11 +147,14 @@ Route::middleware('auth')->group(function () {
         return app(\App\Http\Controllers\RolesController::class)->store(request());
     })->name('roles.store');
 
-    Route::get('roles/{role}/edit', function ($role) {
+    Route::get('roles/{role}/edit', function (Role $role) {
+        // Authorization check: Ensure the user has the right roles
         if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
             abort(403, 'Unauthorized');
         }
-        return app(\App\Http\Controllers\RolesController::class)->edit($role);
+
+        // Pass the role model to the controller edit method
+        return app(RolesController::class)->edit($role);
     })->name('roles.edit');
 
     Route::put('roles/{role}', function ($role) {
@@ -205,8 +205,6 @@ Route::post('users/{user}/roles', function (\App\Models\User $user) {
     return app(\App\Http\Controllers\RolesController::class)->assignRole(request(), $user);
 })->name('roles.assign');
 
-Route::post('/complete-task', [UsersController::class, 'completeTask'])->name('completeTask');
-
 Route::get('/check-email', function () {
     $email = request('email');
     $exists = User::where('email', $email)->exists();
@@ -219,15 +217,15 @@ Route::post('/new-request', [RequestController::class, 'store'])->name('newReque
 
 Route::get('/queue', [RequestController::class, 'showQueue'])->name('queue.show');
 
-Route::post('/mark-as-available', [UsersController::class, 'completeTask'])->name('markAsAvailable');
-
-Route::post('/tasks/{task}/complete', [TaskController::class, 'markAsComplete'])->name('tasks.complete');
+Route::post('/mark-as-available', [UsersController::class, 'markAvailable'])->name('markAvailable');
 
 Route::post('/notify-available-users', [UsersController::class, 'notifyAvailableUsers']);
 
-Route::patch('/tasks/{taskId}/complete', [TaskController::class, 'markAsComplete'])->name('requests.complete');
+Route::get('/next-user-modal', [UsersController::class, 'nextUserToModal'])->name('nextUserToModal');
 
-Route::patch('/tasks/skip/{taskId}', [TaskController::class, 'skipTask'])->name('tasks.skip');
+Route::patch('/tasks/{taskId}/complete', [TaskController::class, 'markAsComplete'])->name('tasks.complete');
+Route::patch('/tasks/{task}/skip', [TaskController::class, 'skip'])->name('tasks.skip');
+;
 
 
 

@@ -13,6 +13,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
+
 </head>
 <body class="h-full">
 
@@ -131,79 +132,87 @@
         <main class="flex-1 p-6 bg-gray-100">
             {{ $slot }}  <!-- Here is where the content will be injected from views -->
         </main>
-        <div x-data="{ openModal: false }" class="relative">
 
-            <!-- Button to open modal at the bottom right -->
-            <button class="px-4 py-2 bg-blue-500 text-white rounded-lg fixed bottom-4 right-4 z-50" @click.prevent="openModal = true">
-                Create Request
-            </button>
+        @if (Auth::check())
+            <div x-data="{ openModal: false, selectedAgent: 'John Doe' }" class="relative">
 
-            <!-- Modal -->
-            <div x-show="openModal" x-transition.opacity x-cloak class="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50 z-50">
-                <div class="bg-white rounded-lg p-6 max-w-lg w-full">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-semibold">Create New Request</h2>
-                        <button @click="openModal = false" class="text-gray-500 hover:text-gray-700">&times;</button>
+                <!-- Button to open modal at the bottom right -->
+                <button class="px-4 py-2 bg-blue-500 text-white rounded-lg fixed bottom-4 right-4 z-50" @click.prevent="openModal = true">
+                    Create Request
+                </button>
+
+                <!-- Modal -->
+                <div x-show="openModal" x-transition.opacity x-cloak class="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50 z-50">
+                    <div class="bg-white rounded-lg p-6 max-w-lg w-full">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-semibold">Create New Request</h2>
+                            <button @click="openModal = false" class="text-gray-500 hover:text-gray-700">&times;</button>
+                        </div>
+                        <!-- Display the agent assigned to the request -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700">Assigned Agent</label>
+                            <p class="mt-2 text-sm text-gray-600" x-text="`Assigned to: ${selectedAgent}`"></p>
+                        </div>
+                        <!-- Modal Form -->
+                        <form action="{{ route('newRequest') }}" method="POST" id="new-request-form">
+                            @csrf
+
+                            <!-- Title Input -->
+                            <div class="mb-4">
+                                <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                                <input type="text" id="title" name="title" required class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white">
+                            </div>
+                            <!-- Channel Select -->
+                            <div class="mb-4">
+                                <label for="channel" class="block text-sm font-medium text-gray-700">Channel</label>
+                                <select id="channel" name="channel" required class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white">
+                                    <option value="Whatsapp">Whatsapp</option>
+                                    <option value="Slack">Slack</option>
+                                    <option value="Email">Email</option>
+                                </select>
+                            </div>
+
+                            <!-- Request Type Select -->
+                            <div class="mb-4">
+                                <label for="request-type" class="block text-sm font-medium text-gray-700">Request Type</label>
+                                <select id="request-type" name="request_type" class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white">
+                                    <option value="Hardware">Computer</option>
+                                    <option value="Software">Internet</option>
+                                    <option value="Access">Access</option>
+                                    <option value="Platform Specific">Platform Specific related</option>
+
+                                </select>
+                            </div>
+
+                            <!-- Description Textarea -->
+                            <div class="mb-4">
+                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                <textarea id="description" name="description" rows="4" class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white" required></textarea>
+                            </div>
+
+
+                            <!-- Hidden Fields -->
+                            <input type="hidden" name="start_time" value="{{ now() }}"> <!-- Set current timestamp as start_time -->
+                            <input type="hidden" name="status" value="pending"> <!-- Set status to pending -->
+
+                            <!-- Submit Button -->
+                            <div class="flex justify-end">
+                                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Submit Request</button>
+                            </div>
+                        </form>
                     </div>
-
-                    <!-- Modal Form -->
-                    <form action="{{ route('newRequest') }}" method="POST" id="new-request-form">
-                        @csrf
-
-                        <!-- Title -->
-                        <div class="mb-4">
-                            <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
-                            <input type="text" id="title" name="title" required class="mt-2 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-
-                        <!-- Channel -->
-                        <div class="mb-4">
-                            <label for="channel" class="block text-sm font-medium text-gray-700">Channel</label>
-                            <input type="text" id="channel" name="channel" required class="mt-2 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-
-                        <!-- Request Type -->
-                        <div class="mb-4">
-                            <label for="request-type" class="block text-sm font-medium text-gray-700">Request Type</label>
-                            <select id="request-type" name="request_type" class="mt-2 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                <option value="Technical Issue">Technical Issue</option>
-                                <option value="Customer Support">Customer Support</option>
-                            </select>
-                        </div>
-
-                        <!-- Description -->
-                        <div class="mb-4">
-                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                            <textarea id="description" name="description" rows="4" class="mt-2 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" required></textarea>
-                        </div>
-
-                        <!-- Hidden Fields -->
-                        <input type="hidden" name="start_time" value="{{ now() }}"> <!-- Set current timestamp as start_time -->
-                        <input type="hidden" name="status" value="pending"> <!-- Set status to pending -->
-
-                        <!-- Submit Button -->
-                        <div class="flex justify-end">
-                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Submit Request</button>
-                        </div>
-                    </form>
                 </div>
             </div>
-
-        </div>
-
-
-
-        <script>
-            document.getElementById('new-request-form').addEventListener('submit', function(event) {
-                event.preventDefault();
-                // Perform any additional validation or actions before submitting the form, if necessary
-                this.submit(); // Submit the form after validation or actions
-            });
-        </script>
-
-    </div>
+        @endif
     </div>
 </div>
 
 </body>
 </html>
+<script>
+    document.getElementById('new-request-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        // Perform any additional validation or actions before submitting the form, if necessary
+        this.submit(); // Submit the form after validation or actions
+    });
+</script>

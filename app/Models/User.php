@@ -83,4 +83,9 @@ class User extends Authenticatable
         return $this->first_name . ' ' . $this->last_name;
     }
 
+    public function getIdAttribute()
+    {
+        return $this->attributes['id'];
+    }
+
 }

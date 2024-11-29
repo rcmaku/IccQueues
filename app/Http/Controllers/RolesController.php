@@ -38,8 +38,17 @@ class RolesController extends Controller
 
     public function edit(Role $role)
     {
-        return view('roles.edit', compact('role')); // Form for editing role
+        // Authorization check: Ensure the user has the right roles
+        if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Pass the role model to the view
+        return view('roles.edit', compact('role'));
     }
+
+
+
 
     public function update(Request $request, Role $role)
     {
@@ -69,20 +78,32 @@ class RolesController extends Controller
             'role_id' => 'required|exists:roles,id',
         ]);
 
-        $user->roles()->attach($request->role_id);
+        $role = Role::findOrFail($request->role_id);
+
+        // Check if the user already has the role
+        if ($user->roles->contains($role)) {
+            return redirect()->route('roles.index')->with('error', 'This user already has the selected role.');
+        }
+
+        // Assign the new role to the user
+        $user->roles()->attach($role);
 
         return redirect()->route('roles.index')->with('success', 'Role assigned successfully.');
     }
 
-
-
     public function removeRole(Request $request, User $user)
     {
-        $user->roles()->detach($request->role);
+        $request->validate([
+            'role_id' => 'required|exists:roles,id',
+        ]);
+
+        $role = Role::findOrFail($request->role_id);
+
+        // Detach the role from the user
+        $user->roles()->detach($role);
 
         return redirect()->route('roles.index')->with('success', 'Role removed successfully.');
     }
-
 
     public function list()
     {

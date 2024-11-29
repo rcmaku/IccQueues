@@ -2,96 +2,97 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Request;  // Assuming you are using Request as the model
-use Illuminate\Http\Request as HttpRequest;
+use Illuminate\Http\Request as HttpRequest; // Rename HTTP Request
+use App\Models\Request as TaskRequest; // Rename your Request model
 use App\Models\User;
-use Illuminate\Support\Facades\Log; // Add this to log information
-
-
+use App\Models\AgentStatus;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
-    public function markAsComplete(Request $request, $taskId)
+    public function markAsComplete(HttpRequest $request, $taskId)
     {
-        // Find the task by ID
-        $task = Request::findOrFail($taskId);
+        // Retrieve the task by ID
+        $task = TaskRequest::findOrFail($taskId);
 
-        // Mark the task as complete
+        // Update the task status to 'Completed' and set the end_time to the current time
         $task->status = 'Completed';
-
-        // Set the end_time to the current time
-        $task->end_time = now();
-
-        // Save the updated task
+        $task->end_time = now();  // This uses Laravel's now() helper function for the current time
         $task->save();
 
-        // Redirect with success message
-        return redirect()->route('it-queue')->with('success', 'Task marked as complete.');
+        // Get the user assigned to this task
+        $user = $task->user;
+
+        // Update the user's status to 'Available'
+        $availableStatus = AgentStatus::where('name', 'Available')->first();
+
+        // Ensure the 'Available' status exists
+        if ($availableStatus) {
+            $user->agentStatus()->associate($availableStatus);  // Associate the 'Available' status with the user
+            $user->save();
+        }
+
+        // Redirect back with a success message
+        return redirect()->back()->with('success', 'Task marked as completed and user status updated to Available.');
     }
 
-    public function skipTask($taskId)
+
+    protected $requestController;
+
+    public function __construct(RequestController $requestController)
     {
-        // Find the task by ID
-        $task = Request::findOrFail($taskId);
+        $this->requestController = $requestController;
+    }
 
-        // Log the current task status
-        Log::info('Task ID: ' . $task->id . ' - Current Status: ' . $task->status);
+    public function skip(HttpRequest $httpRequest, $requestId)
+    {
+        // Retrieve the task by ID
+        $task = TaskRequest::findOrFail($requestId);
 
-        // Check if the task is already completed
-        if ($task->status === 'Completed') {
-            return redirect()->route('it-queue')->with('error', 'This task is already completed.');
-        }
-
-        // Find all users with 'available' status
-        $availableUsers = User::whereHas('agentStatus', function ($query) {
-            $query->where('name', 'available'); // Only users with 'available' status
-        })->get();
-
-        // Log the available users
-        Log::info('Available Users: ' . $availableUsers->pluck('id')->implode(', '));
-
-        // If no available user is found, try cycling through the list of all users
-        if ($availableUsers->isEmpty()) {
-            $allUsers = User::orderBy('AgentOrder')->get(); // Get all users in order of 'AgentOrder'
-            $nextUser = null;
-
-            // Cycle through all users in order
-            foreach ($allUsers as $user) {
-                if ($user->agentStatus && $user->agentStatus->name === 'available') {
-                    $nextUser = $user;
-                    break;
-                }
-            }
-
-            // If still no available user, return error
-            if (!$nextUser) {
-                return redirect()->route('it-queue')->with('error', 'No other agents available.');
-            }
-        } else {
-            // If there are available users, pick the next one based on ID (greater than current user ID)
-            $nextUser = $availableUsers->where('id', '>', auth()->id())->first();
-
-            // If no next user is found, cycle through the available users from the beginning
-            if (!$nextUser) {
-                $nextUser = $availableUsers->first();
-            }
-        }
-
-        // Log the next available user to check if one is selected
-        Log::info('Next Available User: ' . ($nextUser ? $nextUser->id : 'None'));
-
-        // If a next available user is found, reassign the task
-        if ($nextUser) {
-            // Reassign the task to the next available user
-            $task->user_id = $nextUser->id;
-            $task->status = 'Assigned';
+        // Validate ownership and ensure the task is not already completed
+        if ($task->user_id === auth()->id() && $task->status !== 'Completed') {
+            // Mark the task as skipped
+            $task->status = 'Skipped';
             $task->save();
 
-            return redirect()->route('it-queue')->with('success', 'Task has been reassigned to the next available user.');
+            // Fetch the user queue from the session
+            $userQueue = session('userQueue', []);
+
+            // If no users are available in the queue
+            if (empty($userQueue)) {
+                return redirect()->back()->withErrors('No available users to assign the task to.');
+            }
+
+            // Get the next user in the queue (shift the first user)
+            $nextUser = array_shift($userQueue);
+
+            // Reassign the task to the next available user
+            $task->user_id = $nextUser['id'];
+            $task->save();
+
+            // Log the reassignment
+            Log::info('Task reassigned to user: ' . $nextUser['id']);
+
+            // Push the user who was just assigned the task back to the end of the queue
+            array_push($userQueue, $nextUser);
+
+            // Save the updated user queue back to the session
+            session(['userQueue' => $userQueue]);
+
+            // Optionally, update the skipping user's status to 'Available'
+            $user = auth()->user();
+            $availableStatus = AgentStatus::where('name', 'Available')->first();
+
+            if ($availableStatus) {
+                $user->agentStatus()->associate($availableStatus);
+                $user->save();
+            }
+
+            return redirect()->back()->with('success', 'Task skipped and reassigned to the next available user.');
         }
 
-        return redirect()->route('it-queue')->with('error', 'No available users to reassign the task.');
+        // If task ownership or status validation fails
+        return redirect()->back()->withErrors('Unable to skip the task.');
     }
-
 
 }

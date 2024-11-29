@@ -1,7 +1,6 @@
 <x-layout :isLoginPage="false">
+    <x-slot:heading>Queue Interactions Report</x-slot:heading>
     <div class="container mx-auto mt-8">
-        <h1 class="text-3xl font-semibold text-center mb-6">Queue Interaction Report</h1>
-
         @if ($errors->any())
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 <ul>

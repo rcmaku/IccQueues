@@ -12,7 +12,7 @@ class QueueController extends Controller
 
     // QueueController.php
 
-
+/*
     public function updateQueue()
     {
         // Get the "Available" status ID
@@ -42,6 +42,7 @@ class QueueController extends Controller
 
 
 /**
+
      * Display a listing of the resource.
      */
     public function index()

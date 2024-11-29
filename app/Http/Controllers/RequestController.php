@@ -3,95 +3,98 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Request; // Request model
-use App\Models\AgentStatus; // Add this to access AgentStatus model
-use App\Models\agentStatusHistory;
+use App\Models\Request as RequestModel;
+use App\Models\AgentStatusHistory;
 use Illuminate\Http\Request as HttpRequest;
+use Carbon\Carbon;
 
 class RequestController extends Controller
 {
+
+    /**
+     * Store the new request and assign an available user.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(HttpRequest $request)
     {
-        // Validate incoming request data
+        // Validate incoming data
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'channel' => 'nullable|string|max:255',
-            'description' => 'required|string|max:500',  // Added for description validation
-            'request_type' => 'nullable|string|max:255',  // Validate request type
+            'channel' => 'required|string|max:255',
+            'request_type' => 'required|string|max:255',
+            'description' => 'required|string|max:500',
             'start_time' => 'required|date',
-            'status' => 'required|string|in:pending',  // Validate that status is 'pending'
+            'status' => 'required|string|max:50',
         ]);
 
-        // Get the next available user
-        $nextAvailableUser = User::whereHas('agentStatus', function ($query) {
-            $query->where('name', 'available');
-        })->first();
+        // Retrieve the current queue from the session
+        $userQueue = session('userQueue', []);
 
-        // Handle case if no user is available
-        if (!$nextAvailableUser) {
-            return redirect()->back()->withErrors('No available users to assign this request.');
+        if (empty($userQueue)) {
+            return redirect()->route('it-queue')->with('error', 'No available IT Specialist users to assign this request.');
         }
 
-        // Assign the next available user to the request
-        $validated['user_id'] = $nextAvailableUser->id;
+        // Assign the first available user from the queue
+        $nextUser = array_shift($userQueue);
 
-        // Create the request and assign it to the available user
-        $requestCreated = Request::create($validated);
+        // Prepare the request data to be saved
+        $requestData = [
+            'title' => $validated['title'],
+            'channel' => $validated['channel'],
+            'request_type' => $validated['request_type'],
+            'description' => $validated['description'],
+            'start_time' => $validated['start_time'],
+            'status' => $validated['status'],
+            'user_id' => $nextUser['id'],  // Assign the user from the queue
+        ];
 
-        // Update the user's status to busy
-        $nextAvailableUser->agentStatus()->associate(AgentStatus::where('name', 'busy')->first());
-        $nextAvailableUser->save();
+        // Save the new request
+        RequestModel::create($requestData);
 
-        return redirect()->back()->with('success', 'Request created and assigned!');
+        // After assigning the user, push them back to the end of the queue
+        array_push($userQueue, $nextUser);
+
+        // Update the session with the new queue
+        session(['userQueue' => $userQueue]);
+
+        return redirect()->route('it-queue')->with([
+            'success' => 'Request created and assigned!',
+            'upcomingUser' => $nextUser, // Pass the next user data back
+            'users' => $userQueue,
+        ]);
     }
 
+    /**
+     * Show the available IT specialists and pending requests.
+     *
+     * @return \Illuminate\View\View
+     */
     public function showQueue()
     {
-        // Fetch users with their agent status and other necessary data
-        $users = User::with('agentStatus')->orderBy('AgentOrder')->get();
+        // Retrieve the user queue from session or initialize if empty
+        $userQueue = session('userQueue', []);
 
-        // Fetch the current task that is in "pending" status
-        $task = Request::where('status', 'pending')->first();  // Only tasks with 'pending' status
+        // Filter available users and sort by their availability
+        $availableUsers = collect($userQueue)
+            ->filter(function ($user) {
+                return isset($user['agentStatus']) && $user['agentStatus']['name'] === 'available';
+            })
+            ->sortBy(function ($user) {
+                return $user['available_at'] ?? now();
+            });
 
-        // Handle case where no task is available
-        if (!$task) {
-            return view('it-queue', ['message' => 'No pending tasks at the moment']);
-        }
+        // Get the upcoming user (first in the sorted list)
+        $upcomingUser = $availableUsers->first();
 
-        // Pass the current task and users, as well as the authenticated user
-        return view('it-queue', compact('task', 'users'))->with('authUser', Auth::user());
-    }
+        // Retrieve all pending requests
+        $requests = RequestModel::where('status', 'pending')->get();
 
-    public function complete(Request $request)
-    {
-        // Ensure that only the assigned user can complete the request
-        if ($request->user_id !== auth()->id()) {
-            return redirect()->route('it-queue')->with('error', 'You are not authorized to complete this request.');
-        }
-
-        // Update the request status to 'Completed'
-        $request->update(['status' => 'Completed']);
-
-        // Fetch the user assigned to this task
-        $user = User::find($request->user_id);
-
-        // Fetch the 'available' status and associate it with the user (if not already available)
-        $availableStatus = AgentStatus::firstOrCreate(['name' => 'available']);
-
-        // Update the user's status to 'available'
-        $user->agentStatus()->associate($availableStatus);
-        $user->save();
-
-        // Update the last interaction (status change) time
-        agentStatusHistory::create([
-            'user_id' => $user->id,
-            'agent_status_id' => $availableStatus->id,
-            'changed_at' => now(),
+        return view('it-queue', [
+            'users' => $availableUsers,
+            'upcomingUser' => $upcomingUser,
+            'requests' => $requests,  // Pass requests to the view
         ]);
-
-        return redirect()->route('it-queue')->with('success', 'Request marked as complete and status updated to available.');
     }
-
-
-
 }

@@ -4,14 +4,14 @@
     </x-slot:heading>
 
     <div class="min-h-screen flex bg-gray-100">
-        <!-- Left Half (Video Background with Text Overlay) -->
+       <!-- Left Side Images n stuff-->
         <div class="hidden lg:flex w-1/2 relative">
-            <!-- Background Video -->
+            <!-- Placeholder for something related to ICC IT? -->
             <video autoplay muted loop class="absolute inset-0 h-full w-full object-cover">
                 <source src="https://videos.pexels.com/video-files/28709421/12457750_1080_1920_30fps.mp4" type="video/mp4">
             </video>
 
-            <!-- Text Overlay -->
+            <!-- Text Overlay "ICC IT" -->
             <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                 <div class="text-center text-white px-8">
                     <h2 class="text-2xl md:text-4xl font-bold">ICC IT</h2>
@@ -25,7 +25,7 @@
             <div class="max-w-md mx-auto space-y-8">
                 <!-- Logo -->
                 <div class="text-center">
-                    <img src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=500" alt="Logo" class="h-12 w-auto mx-auto">
+                    <img src="https://i0.wp.com/iccbpo.com/wp-content/uploads/2024/01/01-LOGO-ICC.png?resize=300%2C92&ssl=1" alt="Logo" class="h-12 w-auto mx-auto">
                     <h1 class="text-2xl font-bold text-gray-900 mt-4">Inicio Sesión</h1>
                 </div>
 
@@ -49,32 +49,27 @@
                         </div>
                     </div>
 
-                    <!-- Remember Me and Forgot Password -->
+                    <!-- Remember Me and Forgot Password Not implemented atm
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center">
                             <input id="remember-me" name="remember-me" type="checkbox"
                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                            <label for="remember-me" class="ml-2 block text-sm text-gray-900">Recuérdame</label>
+                            <label for="remember-me" class="ml-2 block text-sm text-gray-900">Remember Me</label>
                         </div>
                         <div class="text-sm">
-                            <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">¿Olvidaste tu contraseña?</a>
+                            <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">Forgot your Password?</a>
                         </div>
-                    </div>
+                    </div>-->
 
                     <!-- Submit Button -->
                     <div>
                         <button type="submit"
                                 class="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                            Iniciar Sesión
+                            Login
                         </button>
                     </div>
                 </form>
 
-                <!-- Footer -->
-                <div class="text-center text-sm text-gray-600">
-                    ¿No tienes cuenta aún?
-                    <a href="/register" class="font-medium text-indigo-600 hover:text-indigo-500">Crear Cuenta</a>
-                </div>
             </div>
         </div>
     </div>
