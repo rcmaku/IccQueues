@@ -32,7 +32,7 @@ class UsersController extends Controller
         $availableOrders = array_diff($allOrders, $usedOrders);
 
         // Fetch available statuses
-        $availableStatuses = Status::all();  // Assuming you have a Status model
+        $availableStatuses = agentStatus::all();  // Assuming you have a Status model
 
         return view('agent.create', compact('availableOrders', 'availableStatuses'));
     }
@@ -141,7 +141,6 @@ class UsersController extends Controller
         return redirect()->route('agent.index')->with('success', 'Agent deleted successfully.');
     }
 
-    // Show the grid with available IT specialists
     // Show the grid with available IT specialists
     public function showUserStatusGrid()
     {

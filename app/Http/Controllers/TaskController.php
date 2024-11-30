@@ -7,6 +7,8 @@ use App\Models\Request as TaskRequest; // Rename your Request model
 use App\Models\User;
 use App\Models\AgentStatus;
 use Illuminate\Support\Facades\Log;
+use App\Models\agentStatusHistory;
+
 
 class TaskController extends Controller
 {
@@ -23,18 +25,46 @@ class TaskController extends Controller
         // Get the user assigned to this task
         $user = $task->user;
 
-        // Update the user's status to 'Available'
+        // Get the 'Available' status from the agent_status table
         $availableStatus = AgentStatus::where('name', 'Available')->first();
 
         // Ensure the 'Available' status exists
-        if ($availableStatus) {
-            $user->agentStatus()->associate($availableStatus);  // Associate the 'Available' status with the user
+        if (!$availableStatus) {
+            return redirect()->back()->withErrors('The "Available" status is missing from the system.');
+        }
+
+        // Check if the user's status is already "Available" to prevent redundant updates
+        if ($user->agentStatus && $user->agentStatus->name === 'Available') {
+            return redirect()->back()->with('info', 'User is already marked as Available.');
+        }
+
+        // Update the user's status to 'Available' using the logic from the updateStatus function
+        try {
+            // Update the user's status
+            $user->agentStatus()->associate($availableStatus);
+            $user->available_at = now();  // Update available_at field with the current time
             $user->save();
+
+            // Record the status change in the agent_status_history table
+            AgentStatusHistory::create([
+                'user_id' => $user->id,
+                'agent_status_id' => $availableStatus->id,
+                'changed_at' => now(),
+            ]);
+
+            // Log the status change
+            Log::info("User ID " . $user->id . " status changed to 'Available' at " . now());
+
+        } catch (\Exception $e) {
+            // Log the error if unable to update the status
+            Log::error('Error updating agent status: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update agent status.');
         }
 
         // Redirect back with a success message
         return redirect()->back()->with('success', 'Task marked as completed and user status updated to Available.');
     }
+
 
 
     protected $requestController;

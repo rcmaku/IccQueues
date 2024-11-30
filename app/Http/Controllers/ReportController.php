@@ -19,25 +19,27 @@ class ReportController extends Controller
             'end_date.after_or_equal' => 'The end date must be equal to or later than the start date.',
         ]);
 
-        // Simplified query for testing purposes
+        // Query for the report with counts for each channel
         $query = Request::query()
             ->selectRaw('users.id as user_id, CONCAT(users.first_name, " ", users.last_name) as full_name, users.email')
             ->selectRaw('COUNT(requests.id) as interaction_count')
+            ->selectRaw('COUNT(CASE WHEN requests.channel = "Slack" THEN 1 END) as slack_count')   // Slack interactions
+            ->selectRaw('COUNT(CASE WHEN requests.channel = "Whatsapp" THEN 1 END) as whatsapp_count') // WhatsApp interactions
+            ->selectRaw('COUNT(CASE WHEN requests.channel = "Email" THEN 1 END) as email_count')     // Email interactions
             ->selectRaw('IFNULL(AVG(TIMESTAMPDIFF(SECOND, requests.start_time, requests.end_time)), 0) as avg_handling_time')
-            ->selectRaw('MIN(requests.start_time) as first_interaction_date')
-            ->selectRaw('MAX(requests.end_time) as last_interaction_date')
             ->join('users', 'requests.user_id', '=', 'users.id')
-            // Remove whereNotNull temporarily to check if data exists
             ->groupBy('users.id', 'users.first_name', 'users.last_name', 'users.email');
 
-        // Debugging: Log the SQL query to check the logic
-        \Log::info('SQL Query:', ['query' => $query->toSql(), 'bindings' => $query->getBindings()]);
+        // Apply filtering if start_date and end_date are provided
+        if ($request->start_date) {
+            $query->whereDate('requests.created_at', '>=', $request->start_date);
+        }
+        if ($request->end_date) {
+            $query->whereDate('requests.created_at', '<=', $request->end_date);
+        }
 
         // Get the data from the query
         $reportData = $query->get();
-
-        // Debugging: Log the results to check if data is being fetched
-        \Log::info('Report Data:', ['data' => $reportData]);
 
         // Get all users for use in the view
         $users = User::all();
@@ -45,4 +47,5 @@ class ReportController extends Controller
         // Return the report view with the data
         return view('report.report', compact('reportData', 'users'));
     }
+
 }

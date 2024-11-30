@@ -52,17 +52,18 @@ class RolesController extends Controller
 
     public function update(Request $request, Role $role)
     {
+        if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
+            abort(403, 'Unauthorized');
+        }
+
         $request->validate([
             'roleName' => 'required|string|max:255',
             'status' => 'required|boolean',
         ]);
 
-        $role->update([
-            'roleName' => $request->roleName,
-            'status' => $request->status,
-        ]);
+        $role->update($request->only(['roleName', 'status']));
 
-        return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
+        return redirect()->route('roles.list')->with('success', 'Role updated successfully.');
     }
 
     public function destroy(Role $role)

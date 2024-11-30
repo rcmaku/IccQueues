@@ -39,11 +39,6 @@
                         <td class="px-6 py-4 text-sm">{{ $role->roleName }}</td>
                         <td class="px-6 py-4 text-sm">{{ $role->status ? 'Active' : 'Inactive' }}</td>
                         <td class="px-6 py-4 text-center">
-                            <!-- Edit Button -->
-                            <button onclick="openDrawer('edit', {{ $role->id }})" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-500 transition">
-                                Edit
-                            </button>
-
                             <!-- Delete Button -->
                             <form action="{{ route('roles.destroy', $role->id) }}" method="POST" style="display:inline;">
                                 @csrf

@@ -18,3 +18,17 @@ export default {
     },
     plugins: [],
 };
+// tailwind.config.js
+module.exports = {
+    content: [
+        "./resources/**/*.blade.php",
+        "./resources/**/*.js",
+        "./node_modules/flowbite/**/*.js"
+    ],
+    theme: {
+        extend: {},
+    },
+    plugins: [
+        require('flowbite/plugin'),
+    ],
+}

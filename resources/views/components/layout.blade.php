@@ -14,9 +14,46 @@
 
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 
+        <!-- Other head content -->
+        <script>
+            setInterval(function() {
+                location.reload();
+            }, 100000);
+        </script>
+
+
 </head>
 <body class="h-full">
 
+<!-- Notifications Section -->
+<div id="toast-container" class="fixed top-0 left-1/2 transform -translate-x-1/2 z-50 space-y-4 pt-16">
+
+    <!-- Check if user is authenticated before displaying notifications -->
+    @if(auth()->check())
+        @foreach (auth()->user()->unreadNotifications as $notification)
+            <div id="toast-success" class="flex items-center w-full max-w-xs p-4 mb-4 text-white bg-green-500 rounded-lg shadow-md space-x-4 toast toast-top">
+                <div class="flex-shrink-0">
+                    <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8.293 9.293a1 1 0 0 1 1.414 0L12 11.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 0-1.414z"/>
+                    </svg>
+                </div>
+                <div class="text-sm font-normal">
+                    {{ $notification->data['message'] ?? 'You have a new notification!' }}
+                </div>
+                <button type="button"
+                        class="text-white hover:bg-green-600 p-1.5 ml-auto inline-flex items-center justify-center w-6 h-6 bg-transparent rounded-full"
+                        data-dismiss-target="#toast-success"
+                        data-notification-id="{{ $notification->id }}"
+                        aria-label="Close">
+                    <span class="sr-only">Close</span>
+                    <svg aria-hidden="true" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M10 9l-5 5m0-5l5 5" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+            </div>
+        @endforeach
+    @endif
+</div>
 <div class="min-h-full flex flex-col lg:flex-row" x-data="{ open: false }">
 
     <!-- Sidebar -->
@@ -133,86 +170,44 @@
             {{ $slot }}  <!-- Here is where the content will be injected from views -->
         </main>
 
-        @if (Auth::check())
-            <div x-data="{ openModal: false, selectedAgent: 'John Doe' }" class="relative">
-
-                <!-- Button to open modal at the bottom right -->
-                <button class="px-4 py-2 bg-blue-500 text-white rounded-lg fixed bottom-4 right-4 z-50" @click.prevent="openModal = true">
-                    Create Request
-                </button>
-
-                <!-- Modal -->
-                <div x-show="openModal" x-transition.opacity x-cloak class="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50 z-50">
-                    <div class="bg-white rounded-lg p-6 max-w-lg w-full">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-2xl font-semibold">Create New Request</h2>
-                            <button @click="openModal = false" class="text-gray-500 hover:text-gray-700">&times;</button>
-                        </div>
-                        <!-- Display the agent assigned to the request -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700">Assigned Agent</label>
-                            <p class="mt-2 text-sm text-gray-600" x-text="`Assigned to: ${selectedAgent}`"></p>
-                        </div>
-                        <!-- Modal Form -->
-                        <form action="{{ route('newRequest') }}" method="POST" id="new-request-form">
-                            @csrf
-
-                            <!-- Title Input -->
-                            <div class="mb-4">
-                                <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
-                                <input type="text" id="title" name="title" required class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white">
-                            </div>
-                            <!-- Channel Select -->
-                            <div class="mb-4">
-                                <label for="channel" class="block text-sm font-medium text-gray-700">Channel</label>
-                                <select id="channel" name="channel" required class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white">
-                                    <option value="Whatsapp">Whatsapp</option>
-                                    <option value="Slack">Slack</option>
-                                    <option value="Email">Email</option>
-                                </select>
-                            </div>
-
-                            <!-- Request Type Select -->
-                            <div class="mb-4">
-                                <label for="request-type" class="block text-sm font-medium text-gray-700">Request Type</label>
-                                <select id="request-type" name="request_type" class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white">
-                                    <option value="Hardware">Computer</option>
-                                    <option value="Software">Internet</option>
-                                    <option value="Access">Access</option>
-                                    <option value="Platform Specific">Platform Specific related</option>
-
-                                </select>
-                            </div>
-
-                            <!-- Description Textarea -->
-                            <div class="mb-4">
-                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                                <textarea id="description" name="description" rows="4" class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white" required></textarea>
-                            </div>
-
-
-                            <!-- Hidden Fields -->
-                            <input type="hidden" name="start_time" value="{{ now() }}"> <!-- Set current timestamp as start_time -->
-                            <input type="hidden" name="status" value="pending"> <!-- Set status to pending -->
-
-                            <!-- Submit Button -->
-                            <div class="flex justify-end">
-                                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Submit Request</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        @endif
     </div>
 </div>
 
 </body>
 </html>
 <script>
-    document.getElementById('new-request-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        // Perform any additional validation or actions before submitting the form, if necessary
-        this.submit(); // Submit the form after validation or actions
+    document.querySelectorAll('[data-dismiss-target="#toast-success"]').forEach(button => {
+        button.addEventListener('click', function() {
+            // Get the notification ID from the data attribute
+            const notificationId = this.getAttribute('data-notification-id');
+
+            // Send an AJAX request to mark the notification as read
+            fetch(`/notifications/${notificationId}/mark-as-read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    notification_id: notificationId
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Hide the toast on success
+                        const toast = document.querySelector("#toast-success");
+                        if (toast) {
+                            toast.classList.add("hidden");
+                        }
+                    } else {
+                        console.error('Error marking notification as read.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
     });
 </script>
+

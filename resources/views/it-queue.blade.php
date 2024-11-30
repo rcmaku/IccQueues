@@ -8,19 +8,18 @@
             <div class="bg-white p-6 rounded-lg shadow col-span-1">
                 <h2 class="text-2xl font-bold text-gray-700 mb-6">IT Queue</h2>
 
-                <!-- Upcoming Specialist Section -->
                 <div class="bg-gray-50 p-4 rounded-lg mb-6">
                     <h3 class="text-lg font-semibold text-gray-700 text-center">Upcoming Specialist</h3>
                     @isset($upcomingUser)
                         <div class="text-center mt-4">
                             <p class="text-lg font-medium">
-                                {{ $upcomingUser['first_name'] ?? 'Unknown' }} {{ $upcomingUser['last_name'] ?? '' }}
+                                {{ $upcomingUser->first_name ?? 'Unknown' }} {{ $upcomingUser->last_name ?? '' }}
                             </p>
                             <p class="text-sm text-gray-500">
-                                Status: {{ $upcomingUser['agentStatus']['name'] ?? 'No status' }}
+                                Status: {{ $upcomingUser->agentStatus->name ?? 'No status' }}
                             </p>
                             <p class="text-sm text-gray-500">
-                                Available since: {{ \Carbon\Carbon::parse($upcomingUser['available_at'])->diffForHumans() }}
+                                Available since: {{ \Carbon\Carbon::parse($upcomingUser->available_at)->diffForHumans() }}
                             </p>
                         </div>
                     @else
@@ -28,35 +27,35 @@
                     @endisset
                 </div>
 
-                <!-- IT Specialists Section (Available) -->
                 <div>
                     <h3 class="text-xl font-bold text-gray-700 mb-4">Available IT Specialists</h3>
-                    @foreach ($users as $user)
-                        @if ($user['agentStatus'] && $user['agentStatus']['name'] === 'available')
+                    @forelse ($users as $user)
+                        @if ($user->agentStatus && $user->agentStatus->name === 'available')
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-2">
                                 <div>
                                     <p class="text-sm text-gray-500">
                                         #{{ $loop->index + 1 }}
                                     </p>
                                     <p class="text-lg font-medium text-gray-700">
-                                        {{ $user['first_name'] }} {{ $user['last_name'] }}
+                                        {{ $user->first_name }} {{ $user->last_name }}
                                     </p>
                                 </div>
                                 <div class="text-sm text-gray-600">
-                                    <span>{{ $user['agentStatus']['name'] ?? 'No status' }}</span>
-                                    <span id="timer-{{ $user['id'] }}" class="ml-2 text-green-500">
+                                    <span>{{ $user->agentStatus->name }}</span>
+                                    <span id="timer-{{ $user->id }}" class="ml-2 text-green-500">
                                         @php
-                                            $availableAt = \Carbon\Carbon::parse($user['available_at']);
+                                            $availableAt = \Carbon\Carbon::parse($user->available_at);
                                         @endphp
                                         {{ $availableAt->diffForHumans() }}
                                     </span>
                                 </div>
                             </div>
                         @endif
-                    @endforeach
+                    @empty
+                        <p class="text-gray-600 text-center">No available IT Specialists found.</p>
+                    @endforelse
                 </div>
 
-                <!-- IT Specialists Section (Unavailable) -->
                 <div class="mt-6">
                     <h3 class="text-xl font-bold text-gray-700 mb-4">Unavailable IT Specialists</h3>
                     @foreach ($users as $user)
@@ -78,6 +77,7 @@
                     @endforeach
                 </div>
             </div>
+
             <!-- Second Grid: Your Status -->
             <div class="bg-white p-6 rounded-lg shadow col-span-1">
                 <h3 class="text-xl font-semibold text-gray-700 text-center mb-6">Your Status</h3>
@@ -123,7 +123,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
 
             <!-- Third Grid: Your Tasks -->
@@ -174,6 +173,83 @@
             </div>
         </div>
     </div>
+
+    <!-- Floating Modal Button -->
+    <!-- Floating Modal Button -->
+    <div x-data="{ isFloatingModalOpen: false }">
+        <button @click="isFloatingModalOpen = true" class="fixed bottom-8 right-8 px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-lg hover:bg-indigo-700 transition">
+            Show Task Details
+        </button>
+
+        <!-- Floating Modal with Form -->
+        <div x-show="isFloatingModalOpen" class="fixed bottom-24 right-8 w-96 bg-white rounded-lg shadow-lg p-4 z-50" style="display: none;">
+            <h3 class="text-xl font-semibold text-gray-700 mb-4">New Request</h3>
+
+            <!-- Check if there's an upcoming user assigned -->
+            @isset($upcomingUser)
+                <div class="text-center mt-4">
+                    <p class="text-lg font-medium">Assignee:
+                        {{ $upcomingUser->first_name ?? 'Unknown' }} {{ $upcomingUser->last_name ?? '' }}
+                    </p>
+                </div>
+            @else
+                <p class="text-center text-gray-600 mt-4">No upcoming user in line.</p>
+            @endisset
+
+            <!-- Modal Form -->
+            <form action="{{ route('newRequest') }}" method="POST" id="new-request-form">
+                @csrf
+
+                <!-- Title Input -->
+                <div class="mb-4">
+                    <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                    <input type="text" id="title" name="title" required class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white">
+                </div>
+
+                <!-- Channel Select -->
+                <div class="mb-4">
+                    <label for="channel" class="block text-sm font-medium text-gray-700">Channel</label>
+                    <select id="channel" name="channel" required class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white">
+                        <option value="Whatsapp">Whatsapp</option>
+                        <option value="Slack">Slack</option>
+                        <option value="Email">Email</option>
+                    </select>
+                </div>
+
+                <!-- Request Type Select -->
+                <div class="mb-4">
+                    <label for="request-type" class="block text-sm font-medium text-gray-700">Request Type</label>
+                    <select id="request-type" name="request_type" class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white">
+                        <option value="Hardware">Computer</option>
+                        <option value="Software">Internet</option>
+                        <option value="Access">Access</option>
+                        <option value="Platform Specific">Platform Specific related</option>
+                    </select>
+                </div>
+
+                <!-- Description Textarea -->
+                <div class="mb-4">
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="description" name="description" rows="4" class="mt-2 block w-full max-w-lg border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2 bg-white" required></textarea>
+                </div>
+
+                <!-- Hidden Fields -->
+                <input type="hidden" name="start_time" value="{{ now() }}"> <!-- Set current timestamp as start_time -->
+                <input type="hidden" name="status" value="pending"> <!-- Set status to pending -->
+
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Submit Request</button>
+                </div>
+            </form>
+
+            <!-- Close Button -->
+            <button @click="isFloatingModalOpen = false" class="absolute top-2 right-2 text-gray-600 hover:text-gray-800">
+                X
+            </button>
+        </div>
+    </div>
+
 
     <script>
         setInterval(function() {

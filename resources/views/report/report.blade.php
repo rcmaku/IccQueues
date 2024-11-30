@@ -50,9 +50,10 @@
             <tr>
                 <th class="py-3 px-4 text-left">User</th>
                 <th class="py-3 px-4 text-left">Interaction Count</th>
+                <th class="py-3 px-4 text-left">Slack Count</th> <!-- Added Slack Count -->
+                <th class="py-3 px-4 text-left">Whatsapp Count</th> <!-- Added Whatsapp Count -->
+                <th class="py-3 px-4 text-left">Email Count</th> <!-- Added Email Count -->
                 <th class="py-3 px-4 text-left">Avg Handling Time (HH:MM:SS)</th>
-                <th class="py-3 px-4 text-left">First Interaction Date</th>
-                <th class="py-3 px-4 text-left">Last Interaction Date</th>
             </tr>
             </thead>
             <tbody class="text-gray-700">
@@ -60,13 +61,14 @@
                 <tr class="hover:bg-gray-50">
                     <td class="py-3 px-4">{{ $data->full_name }} <br><small class="text-gray-500">{{ $data->email }}</small></td>
                     <td class="py-3 px-4">{{ $data->interaction_count }}</td>
+                    <td class="py-3 px-4">{{ $data->slack_count }}</td> <!-- Display Slack count -->
+                    <td class="py-3 px-4">{{ $data->whatsapp_count }}</td> <!-- Display WhatsApp count -->
+                    <td class="py-3 px-4">{{ $data->email_count }}</td> <!-- Display Email count -->
                     <td class="py-3 px-4">{{ gmdate('H:i:s', $data->avg_handling_time) }}</td>
-                    <td class="py-3 px-4">{{ $data->first_interaction_date }}</td>
-                    <td class="py-3 px-4">{{ $data->last_interaction_date }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="py-3 px-4 text-center text-gray-500">No data available for the selected criteria.</td>
+                    <td colspan="6" class="py-3 px-4 text-center text-gray-500">No data available for the selected criteria.</td> <!-- Adjusted colspan -->
                 </tr>
             @endforelse
             </tbody>

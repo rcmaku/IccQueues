@@ -12,6 +12,7 @@ use App\Http\Controllers\ReportController;
 use Illuminate\Http\Request as HttpRequest;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\NotificationController;
 
 // Login routes
 Route::get('/login', function () {
@@ -147,30 +148,27 @@ Route::middleware('auth')->group(function () {
         return app(\App\Http\Controllers\RolesController::class)->store(request());
     })->name('roles.store');
 
-    Route::get('roles/{role}/edit', function (Role $role) {
-        // Authorization check: Ensure the user has the right roles
+    Route::get('roles/{role}/edit', function (\App\Models\Role $role) {
         if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
             abort(403, 'Unauthorized');
         }
-
-        // Pass the role model to the controller edit method
-        return app(RolesController::class)->edit($role);
+        return app(\App\Http\Controllers\RolesController::class)->edit($role);
     })->name('roles.edit');
 
-    Route::put('roles/{role}', function ($role) {
+    // Fixed PUT route
+    /*Route::put('roles/{role}', function (\App\Models\Role $role) {
         if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
             abort(403, 'Unauthorized');
         }
         return app(\App\Http\Controllers\RolesController::class)->update(request(), $role);
-    })->name('roles.update');
+    })->name('roles.update');*/
 
-    Route::delete('roles/{role}', function ($role) {
+    Route::delete('roles/{role}', function (\App\Models\Role $role) {
         if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
             abort(403, 'Unauthorized');
         }
         return app(\App\Http\Controllers\RolesController::class)->destroy($role);
     })->name('roles.destroy');
-
 
     Route::post('users/{user}/roles', function (\App\Models\User $user) {
         if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
@@ -186,7 +184,6 @@ Route::middleware('auth')->group(function () {
         return app(\App\Http\Controllers\RolesController::class)->removeRole(request(), $user);
     })->name('roles.remove');
 
-
     Route::get('roles/list', function () {
         if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
             abort(403, 'Unauthorized');
@@ -196,20 +193,19 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::post('users/{user}/roles', function (\App\Models\User $user) {
-
     if (!Auth::check()) {
         abort(403, 'Unauthorized');
     }
-
-
     return app(\App\Http\Controllers\RolesController::class)->assignRole(request(), $user);
 })->name('roles.assign');
 
 Route::get('/check-email', function () {
     $email = request('email');
-    $exists = User::where('email', $email)->exists();
+    $exists = \App\Models\User::where('email', $email)->exists();
     return response()->json(['exists' => $exists]);
 });
+
+Route::put('roles/{role}', [RolesController::class, 'update'])->name('roles.update');
 
 Route::delete('agents/{agent}', [UsersController::class, 'destroy'])->name('agents.destroy');
 
@@ -225,7 +221,10 @@ Route::get('/next-user-modal', [UsersController::class, 'nextUserToModal'])->nam
 
 Route::patch('/tasks/{taskId}/complete', [TaskController::class, 'markAsComplete'])->name('tasks.complete');
 Route::patch('/tasks/{task}/skip', [TaskController::class, 'skip'])->name('tasks.skip');
+Route::get('/notifications', [NotificationController::class, 'index']);
 ;
+Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+
 
 
 

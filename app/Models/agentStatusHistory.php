@@ -7,7 +7,7 @@ use Carbon\Carbon;
 
 class AgentStatusHistory extends Model
 {
-    protected $table = 'agent_status_history';
+    protected $table = 'agent_status_history'; // Explicitly define the table name
 
     // Explicitly specify which columns are mass assignable
     protected $fillable = [
