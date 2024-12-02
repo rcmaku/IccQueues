@@ -4,15 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\agentStatusHistory;
-use App\Models\AgentStatus; // Make sure this is correctly imported
+use App\Models\AgentStatus;
 use App\Models\Request as RequestModel;
 use Illuminate\Http\Request as HttpRequest;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\View; // Make sure this is at the top of your controller
-use Illuminate\Support\Facades\Log; // For logging errors or debugging
-use App\Notifications\TicketAssignedNotification;  // <-- Import the notification class
-
-
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Log;
+use App\Notifications\TicketAssignedNotification;
 
 class RequestController extends Controller
 {
@@ -24,6 +22,11 @@ class RequestController extends Controller
      */
     public function store(HttpRequest $request)
     {
+        // Ensure that the authenticated user is an IT Specialist
+        if (!auth()->user()->hasRole('IT Specialist')) {
+            return redirect()->route('home')->with('error', 'You are not authorized to assign tasks.');
+        }
+
         // Validate incoming data
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -110,9 +113,6 @@ class RequestController extends Controller
         ]);
     }
 
-
-
-
     /**
      * Show the available IT specialists and pending requests.
      *
@@ -120,6 +120,11 @@ class RequestController extends Controller
      */
     public function showQueue()
     {
+        // Ensure that the authenticated user is an IT Specialist
+        if (!auth()->user()->hasRole('IT Specialist')) {
+            return redirect()->route('home')->with('error', 'You are not authorized to view the queue.');
+        }
+
         // Retrieve available users and upcoming user as before
         $availableUsers = User::select('users.*')
             ->join('agent_roles', 'users.id', '=', 'agent_roles.user_id')
@@ -141,7 +146,4 @@ class RequestController extends Controller
             'requests' => $requests
         ]);
     }
-
-
-
 }

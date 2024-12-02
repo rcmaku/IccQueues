@@ -17,12 +17,13 @@ class NotificationController extends Controller
     public function markAsRead($notificationId)
     {
         $user = auth()->user();  // Get the currently authenticated user
-        $notification = $user->notifications->find($notificationId);  // Find the notification by ID
+
+        // Find the notification directly using the relationship
+        $notification = $user->notifications()->find($notificationId);  // Use the relationship query
 
         if ($notification) {
             // Set the read_at column to the current timestamp
-            $notification->read_at = now();
-            $notification->save();  // Save the notification
+            $notification->markAsRead();  // This automatically updates the `read_at` column
 
             return response()->json(['success' => true]);
         } else {

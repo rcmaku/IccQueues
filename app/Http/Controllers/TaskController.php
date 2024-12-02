@@ -74,55 +74,95 @@ class TaskController extends Controller
         $this->requestController = $requestController;
     }
 
-    public function skip(HttpRequest $httpRequest, $requestId)
+    public function assignTask(HttpRequest $request, $taskId)
     {
         // Retrieve the task by ID
-        $task = TaskRequest::findOrFail($requestId);
+        $task = TaskRequest::findOrFail($taskId);
 
-        // Validate ownership and ensure the task is not already completed
-        if ($task->user_id === auth()->id() && $task->status !== 'Completed') {
-            // Mark the task as skipped
-            $task->status = 'Skipped';
-            $task->save();
+        // Validate the user being assigned to the task
+        $userId = $request->input('user_id');
+        $user = User::findOrFail($userId);
 
-            // Fetch the user queue from the session
-            $userQueue = session('userQueue', []);
-
-            // If no users are available in the queue
-            if (empty($userQueue)) {
-                return redirect()->back()->withErrors('No available users to assign the task to.');
-            }
-
-            // Get the next user in the queue (shift the first user)
-            $nextUser = array_shift($userQueue);
-
-            // Reassign the task to the next available user
-            $task->user_id = $nextUser['id'];
-            $task->save();
-
-            // Log the reassignment
-            Log::info('Task reassigned to user: ' . $nextUser['id']);
-
-            // Push the user who was just assigned the task back to the end of the queue
-            array_push($userQueue, $nextUser);
-
-            // Save the updated user queue back to the session
-            session(['userQueue' => $userQueue]);
-
-            // Optionally, update the skipping user's status to 'Available'
-            $user = auth()->user();
-            $availableStatus = AgentStatus::where('name', 'Available')->first();
-
-            if ($availableStatus) {
-                $user->agentStatus()->associate($availableStatus);
-                $user->save();
-            }
-
-            return redirect()->back()->with('success', 'Task skipped and reassigned to the next available user.');
+        // Check if the user is already assigned to the task
+        if ($task->user_id === $user->id) {
+            return redirect()->back()->with('info', 'This task is already assigned to the selected user.');
         }
 
-        // If task ownership or status validation fails
-        return redirect()->back()->withErrors('Unable to skip the task.');
+        // Assign the task to the selected user
+        $task->user_id = $user->id;
+        $task->status = 'Assigned'; // Mark the task as "Assigned"
+        $task->start_time = now(); // Optionally set the start time to now
+        $task->save();
+
+        // Get the 'Assigned' status from the agent_status table (or create if not exists)
+        $assignedStatus = AgentStatus::where('name', 'Assigned')->first();
+
+        // If 'Assigned' status is not found, create it or log an error
+        if (!$assignedStatus) {
+            $assignedStatus = AgentStatus::create([
+                'name' => 'Assigned',
+                'description' => 'User is assigned to a task',
+            ]);
+        }
+
+        // Update the user's status to 'Assigned' and set their availability time to now
+        try {
+            $user->agentStatus()->associate($assignedStatus);
+            $user->available_at = now();  // Update availability time
+            $user->save();
+
+            // Record the status change in the agent_status_history table
+            AgentStatusHistory::create([
+                'user_id' => $user->id,
+                'agent_status_id' => $assignedStatus->id,
+                'changed_at' => now(),
+            ]);
+
+            // Log the task assignment
+            Log::info("User ID " . $user->id . " assigned task ID " . $task->id . " at " . now());
+
+        } catch (\Exception $e) {
+            Log::error('Error updating agent status during task assignment: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update agent status during task assignment.');
+        }
+
+        // Now, update the status of the current user (the one doing the assigning) to 'Available'
+        $currentUser = auth()->user(); // Get the current logged-in user
+
+        // Get the 'Available' status from the agent_status table
+        $availableStatus = AgentStatus::where('name', 'Available')->first();
+
+        // Ensure the 'Available' status exists
+        if (!$availableStatus) {
+            return redirect()->back()->withErrors('The "Available" status is missing from the system.');
+        }
+
+        // Check if the current user's status is not already "Available"
+        if ($currentUser->agentStatus && $currentUser->agentStatus->name !== 'Available') {
+            // Update the current user's status to 'Available'
+            try {
+                $currentUser->agentStatus()->associate($availableStatus);
+                $currentUser->available_at = now();  // Update available_at field with the current time
+                $currentUser->save();
+
+                // Record the status change in the agent_status_history table
+                AgentStatusHistory::create([
+                    'user_id' => $currentUser->id,
+                    'agent_status_id' => $availableStatus->id,
+                    'changed_at' => now(),
+                ]);
+
+                // Log the status change to 'Available'
+                Log::info("Current user ID " . $currentUser->id . " status changed to 'Available' after assigning task ID " . $task->id . " at " . now());
+
+            } catch (\Exception $e) {
+                Log::error('Error updating current user agent status: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Failed to update current user agent status.');
+            }
+        }
+
+        // Redirect back with success message
+        return redirect()->back()->with('success', 'Task successfully assigned and your status updated to Available.');
     }
 
 }

@@ -11,27 +11,27 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 
-        <!-- Other head content -->
-        <script>
-            setInterval(function() {
-                location.reload();
-            }, 100000);
-        </script>
-
-
+    <!-- Other head content -->
+    <script>
+        setInterval(function() {
+            location.reload();
+        }, 100000);
+    </script>
 </head>
 <body class="h-full">
 
 <!-- Notifications Section -->
 <div id="toast-container" class="fixed top-0 left-1/2 transform -translate-x-1/2 z-50 space-y-4 pt-16">
-
     <!-- Check if user is authenticated before displaying notifications -->
     @if(auth()->check())
         @foreach (auth()->user()->unreadNotifications as $notification)
-            <div id="toast-success" class="flex items-center w-full max-w-xs p-4 mb-4 text-white bg-green-500 rounded-lg shadow-md space-x-4 toast toast-top">
+            <!-- Play notification sound when the notification appears -->
+            <audio id="notification-sound-{{ $notification->id }}" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+
+            <!-- Notification Display -->
+            <div id="toast-success-{{ $notification->id }}" class="flex items-center w-full max-w-xs p-4 mb-4 text-white bg-green-500 rounded-lg shadow-md space-x-4 toast toast-top">
                 <div class="flex-shrink-0">
                     <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path d="M8.293 9.293a1 1 0 0 1 1.414 0L12 11.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 0-1.414z"/>
@@ -41,19 +41,50 @@
                     {{ $notification->data['message'] ?? 'You have a new notification!' }}
                 </div>
                 <button type="button"
-                        class="text-white hover:bg-green-600 p-1.5 ml-auto inline-flex items-center justify-center w-6 h-6 bg-transparent rounded-full"
-                        data-dismiss-target="#toast-success"
-                        data-notification-id="{{ $notification->id }}"
+                        class="text-white hover:bg-green-600 p-2 ml-auto inline-flex items-center justify-center w-8 h-8 bg-transparent rounded-full focus:outline-none"
+                        onclick="dismissNotification('{{ $notification->id }}')"
                         aria-label="Close">
                     <span class="sr-only">Close</span>
-                    <svg aria-hidden="true" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <svg aria-hidden="true" class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fill-rule="evenodd" d="M10 9l-5 5m0-5l5 5" clip-rule="evenodd"></path>
                     </svg>
                 </button>
             </div>
+
+            <script>
+                // Delay playing the sound until the DOM is updated
+                document.addEventListener('DOMContentLoaded', function () {
+                    const audioElement = document.getElementById('notification-sound-{{ $notification->id }}');
+                    if (audioElement) {
+                        // Attempt to play the sound with a user interaction (like a click event).
+                        document.body.addEventListener('click', function() {
+                            audioElement.play();
+                        });
+                    }
+                });
+
+                function dismissNotification(notificationId) {
+                    // Find the notification by its unique ID
+                    const notification = document.querySelector(`#toast-success-${notificationId}`);
+                    if (notification) {
+                        notification.classList.add('opacity-0'); // fade out the notification
+                        setTimeout(() => notification.remove(), 300); // remove it after fade-out
+                    }
+
+                    // Optionally, mark the notification as read or delete it via AJAX here
+                    fetch(`/notifications/${notificationId}/read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+                }
+            </script>
         @endforeach
     @endif
 </div>
+
 <div class="min-h-full flex flex-col lg:flex-row" x-data="{ open: false }">
 
     <!-- Sidebar -->
@@ -81,36 +112,66 @@
         </div>
 
         <!-- Navi -->
+        <!-- Navi -->
         <nav class="space-y-4 mt-6">
             @if (Auth::check())
                 @if (Auth::user()->hasRole(['admin', 'manager']))
-                    <a href="/report" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
-
-                        <svg fill="#374151" width="32px" height="32px" viewBox="0 0 32.00 32.00" version="1.1" xmlns="http://www.w3.org/2000/svg" stroke="#374151" stroke-width="0.00032"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>report</title> <path d="M6 11h4v17h-4v-17zM22 16v12h4v-12h-4zM14 28h4v-24h-4v24z"></path> </g></svg>
+                    <a href="/report" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-blue-500 hover:text-white transition-all duration-300">
+                        <svg fill="#374151" width="32px" height="32px" viewBox="0 0 32.00 32.00" version="1.1" xmlns="http://www.w3.org/2000/svg" stroke="#374151" stroke-width="0.00032">
+                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                            <g id="SVGRepo_iconCarrier">
+                                <title>report</title>
+                                <path d="M6 11h4v17h-4v-17zM22 16v12h4v-12h-4zM14 28h4v-24h-4v24z"></path>
+                            </g>
+                        </svg>
                         <span :class="{ 'hidden': !open }" class="text-sm">Reporting</span>
                     </a>
-                    <a href="/agent/" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
-                        <svg fill="#374151" width="32px" height="32px" viewBox="0 0 30.586 30.586" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g transform="translate(-546.269 -195.397)"> <path d="M572.138,221.245a15.738,15.738,0,0,0-21.065-.253l-1.322-1.5a17.738,17.738,0,0,1,23.741.28Z"></path> <path d="M561.464,204.152a4.96,4.96,0,1,1-4.96,4.96,4.966,4.966,0,0,1,4.96-4.96m0-2a6.96,6.96,0,1,0,6.96,6.96,6.96,6.96,0,0,0-6.96-6.96Z"></path> <path d="M561.562,197.4a13.293,13.293,0,1,1-13.293,13.293A13.308,13.308,0,0,1,561.562,197.4m0-2a15.293,15.293,0,1,0,15.293,15.293A15.293,15.293,0,0,0,561.562,195.4Z"></path> </g> </g></svg>
+                    <a href="/agent/" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-blue-500 hover:text-white transition-all duration-300">
+                        <svg fill="#374151" width="32px" height="32px" viewBox="0 0 30.586 30.586" xmlns="http://www.w3.org/2000/svg">
+                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                            <g id="SVGRepo_iconCarrier">
+                                <g transform="translate(-546.269 -195.397)">
+                                    <path d="M572.138,221.245a15.738,15.738,0,0,0-21.065-.253l-1.322-1.5a17.738,17.738,0,0,1,23.741.28Z"></path>
+                                    <path d="M561.464,204.152a4.96,4.96,0,1,1-4.96,4.96,4.966,4.966,0,0,1,4.96-4.96m0-2a6.96,6.96,0,1,0,6.96,6.96,6.96,6.96,0,0,0-6.96-6.96Z"></path>
+                                    <path d="M561.562,197.4a13.293,13.293,0,1,1-13.293,13.293A13.308,13.308,0,0,1,561.562,197.4m0-2a15.293,15.293,0,1,0,15.293,15.293A15.293,15.293,0,0,0,561.562,195.4Z"></path>
+                                </g>
+                            </g>
+                        </svg>
                         <span :class="{ 'hidden': !open }" class="text-sm">Agent</span>
                     </a>
-                    <a href="/roles/" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
-                        <svg width="32px" height="32px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M6 8H6.01M6 16H6.01M6 12H18M6 12C3.79086 12 2 10.2091 2 8C2 5.79086 3.79086 4 6 4H18C20.2091 4 22 5.79086 22 8C22 10.2091 20.2091 12 18 12M6 12C3.79086 12 2 13.7909 2 16C2 18.2091 3.79086 20 6 20H18C20.2091 20 22 18.2091 22 16C22 13.7909 20.2091 12 18 12" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                    <a href="/roles/" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-blue-500 hover:text-white transition-all duration-300">
+                        <svg width="32px" height="32px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                            <g id="SVGRepo_iconCarrier">
+                                <path d="M6 8H6.01M6 16H6.01M6 12H18M6 12C3.79086 12 2 10.2091 2 8C2 5.79086 3.79086 4 6 4H18C20.2091 4 22 5.79086 22 8C22 10.2091 20.2091 12 18 12M6 12C3.79086 12 2 13.7909 2 16C2 18.2091 3.79086 20 6 20H18C20.2091 20 22 18.2091 22 16C22 13.7909 20.2091 12 18 12" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </g>
+                        </svg>
                         <span :class="{ 'hidden': !open }" class="text-sm">Roles</span>
                     </a>
                 @endif
-                <a href="/support" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
-                    <svg width="32px" height="32px" viewBox="0 0 24 24" id="_24x24_On_Light_Support" data-name="24x24/On Light/Support" xmlns="http://www.w3.org/2000/svg" fill="#374151"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <rect id="view-box" width="24" height="24" fill="none"></rect> <path id="Shape" d="M8,17.751a2.749,2.749,0,0,1,5.127-1.382C15.217,15.447,16,14,16,11.25v-3c0-3.992-2.251-6.75-5.75-6.75S4.5,4.259,4.5,8.25v3.5a.751.751,0,0,1-.75.75h-1A2.753,2.753,0,0,1,0,9.751v-1A2.754,2.754,0,0,1,2.75,6h.478c.757-3.571,3.348-6,7.022-6s6.264,2.429,7.021,6h.478a2.754,2.754,0,0,1,2.75,2.75v1a2.753,2.753,0,0,1-2.75,2.75H17.44A5.85,5.85,0,0,1,13.5,17.84,2.75,2.75,0,0,1,8,17.751Zm1.5,0a1.25,1.25,0,1,0,1.25-1.25A1.251,1.251,0,0,0,9.5,17.751Zm8-6.75h.249A1.251,1.251,0,0,0,19,9.751v-1A1.251,1.251,0,0,0,17.75,7.5H17.5Zm-16-2.25v1A1.251,1.251,0,0,0,2.75,11H3V7.5H2.75A1.251,1.251,0,0,0,1.5,8.751Z" transform="translate(1.75 2.25)" fill="#374151"></path> </g></svg>
+                <a href="/support" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-blue-500 hover:text-white transition-all duration-300">
+                    <svg width="32px" height="32px" viewBox="0 0 24 24" id="_24x24_On_Light_Support" data-name="24x24/On Light/Support" xmlns="http://www.w3.org/2000/svg" fill="#374151">
+                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                        <g id="SVGRepo_iconCarrier">
+                            <rect id="view-box" width="24" height="24" fill="none"></rect>
+                            <path id="Shape" d="M8,17.751a2.749,2.749,0,0,1,5.127-1.382C15.217,15.447,16,14,16,11.25v-3c0-3.992-2.251-6.75-5.75-6.75S4.5,4.259,4.5,8.25v3.5a.751.751,0,0,1-.75.75h-1A2.753,2.753,0,0,1,0,9.751v-1A2.754,2.754,0,0,1,2.75,6h.478c.757-3.571,3.348-6,7.022-6s6.264,2.429,7.021,6h.478a2.754,2.754,0,0,1,2.75,2.75v1a2.753,2.753,0,0,1-2.75,2.75H17.44A5.85,5.85,0,0,1,13.5,17.84,2.75,2.75,0,0,1,8,17.751Zm1.5,0a1.25,1.25,0,1,0,1.25-1.25A1.251,1.251,0,0,0,9.5,17.751Zm8-6.75h.249A1.251,1.251,0,0,0,19,9.751v-1A1.251,1.251,0,0,0,17.75,7.5H17.5Zm-16-2.25v1A1.251,1.251,0,0,0,2.75,11H3V7.5H2.75A1.251,1.251,0,0,0,1.5,8.751Z" transform="translate(1.75 2.25)" fill="#374151"></path>
+                        </g>
                     </svg>
                     <span :class="{ 'hidden': !open }" class="text-sm">IT-Queue</span>
                 </a>
             @else
-                <a href="/login" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-gray-700">
+                <a href="/login" class="flex items-center space-x-2 py-2.5 px-4 rounded hover:bg-blue-500 hover:text-white transition-all duration-300">
                     <svg width="34px" height="34px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     </svg>
                     <span :class="{ 'hidden': !open }" class="text-sm">Login</span>
                 </a>
             @endif
         </nav>
+
 
 
     </div>
@@ -176,38 +237,18 @@
 </body>
 </html>
 <script>
-    document.querySelectorAll('[data-dismiss-target="#toast-success"]').forEach(button => {
-        button.addEventListener('click', function() {
-            // Get the notification ID from the data attribute
-            const notificationId = this.getAttribute('data-notification-id');
-
-            // Send an AJAX request to mark the notification as read
-            fetch(`/notifications/${notificationId}/mark-as-read`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    notification_id: notificationId
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Hide the toast on success
-                        const toast = document.querySelector("#toast-success");
-                        if (toast) {
-                            toast.classList.add("hidden");
-                        }
-                    } else {
-                        console.error('Error marking notification as read.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        });
+    document.addEventListener('DOMContentLoaded', function () {
+        // Check if there are any unread notifications
+        @if(auth()->check())
+        @foreach (auth()->user()->unreadNotifications as $notification)
+        // Play the sound for each unread notification as soon as the page loads
+        const audioElement = document.getElementById('notification-sound-{{ $notification->id }}');
+        if (audioElement) {
+            audioElement.play();
+        }
+        @endforeach
+        @endif
     });
 </script>
+
 

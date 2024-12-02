@@ -33,9 +33,6 @@
                         @if ($user->agentStatus && $user->agentStatus->name === 'available')
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-2">
                                 <div>
-                                    <p class="text-sm text-gray-500">
-                                        #{{ $loop->index + 1 }}
-                                    </p>
                                     <p class="text-lg font-medium text-gray-700">
                                         {{ $user->first_name }} {{ $user->last_name }}
                                     </p>
@@ -62,9 +59,6 @@
                         @if ($user['agentStatus'] && $user['agentStatus']['name'] !== 'available')
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-2">
                                 <div>
-                                    <p class="text-sm text-gray-500">
-                                        #{{ $loop->index + 1 }}
-                                    </p>
                                     <p class="text-lg font-medium text-gray-700">
                                         {{ $user['first_name'] }} {{ $user['last_name'] }}
                                     </p>
@@ -156,29 +150,67 @@
                                             Mark as Complete
                                         </button>
                                     </form>
+                                @endif
 
-                                    <!-- Skip Task -->
-                                    <form action="{{ route('tasks.skip', $request->id) }}" method="POST" class="mt-4">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition">
-                                            Skip Task
-                                        </button>
-                                    </form>
+                                @if ($request->user_id === auth()->id())
+                                <!-- Assign Task Form -->
+                                @if ($request->status !== 'Completed')
+                                        <form action="{{ route('tasks.assign', ['taskId' => $request->id]) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+
+                                            <label for="user_id" class="block text-sm font-medium text-gray-700">Assign to User:</label>
+
+                                            <!-- Dropdown -->
+                                            <select name="user_id" id="assigned_to"
+                                                    class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition">
+                                                <option value="">Select User</option>
+                                                @foreach($users as $user)
+                                                    <!-- Ensure the option text is visible -->
+                                                    <option <option value="{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }}</option></option>
+                                                @endforeach
+                                            </select>
+
+                                            <button type="submit" id="assign-btn" disabled
+                                                    class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition mt-4">
+                                                Assign Task
+                                            </button>
+                                        </form>
+
+                                        <script>
+                                            document.addEventListener('DOMContentLoaded', function() {
+                                                // Get the dropdown and button
+                                                const assignSelect = document.getElementById('assigned_to');
+                                                const assignButton = document.getElementById('assign-btn');
+
+                                                // Initially disable the button if no user is selected
+                                                assignButton.disabled = assignSelect.value === "";
+
+                                                // Add event listener to detect changes in the dropdown
+                                                assignSelect.addEventListener('change', function() {
+                                                    // Enable or disable the button based on selection
+                                                    if (assignSelect.value !== "") {
+                                                        assignButton.disabled = false;
+                                                    } else {
+                                                        assignButton.disabled = true;
+                                                    }
+                                                });
+                                            });
+                                        </script>
+                                    @endif
                                 @endif
                             </li>
                         @endforeach
                     </ul>
                 @endif
             </div>
+
         </div>
     </div>
-
-    <!-- Floating Modal Button -->
-    <!-- Floating Modal Button -->
+    <!--Modal-->
     <div x-data="{ isFloatingModalOpen: false }">
-        <button @click="isFloatingModalOpen = true" class="fixed bottom-8 right-8 px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-lg hover:bg-indigo-700 transition">
-            Show Task Details
+        <button @click="isFloatingModalOpen = true" class="fixed bottom-8 right-8 px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-indigo-700 transition">
+            Create Request
         </button>
 
         <!-- Floating Modal with Form -->
@@ -269,5 +301,6 @@
             document.getElementById("timer-{{ $user['id'] }}").innerText = hoursDisplay + ":" + minutesDisplay + ":" + secondsDisplay;
             @endforeach
         }, 1000);
+
     </script>
 </x-layout>

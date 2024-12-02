@@ -155,14 +155,6 @@ Route::middleware('auth')->group(function () {
         return app(\App\Http\Controllers\RolesController::class)->edit($role);
     })->name('roles.edit');
 
-    // Fixed PUT route
-    /*Route::put('roles/{role}', function (\App\Models\Role $role) {
-        if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
-            abort(403, 'Unauthorized');
-        }
-        return app(\App\Http\Controllers\RolesController::class)->update(request(), $role);
-    })->name('roles.update');*/
-
     Route::delete('roles/{role}', function (\App\Models\Role $role) {
         if (!Auth::user()->roles()->whereIn('roleName', ['admin', 'manager'])->exists()) {
             abort(403, 'Unauthorized');
@@ -223,8 +215,73 @@ Route::patch('/tasks/{taskId}/complete', [TaskController::class, 'markAsComplete
 Route::patch('/tasks/{task}/skip', [TaskController::class, 'skip'])->name('tasks.skip');
 Route::get('/notifications', [NotificationController::class, 'index']);
 ;
-Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+// In routes/web.php
+Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']);
+// routes/web.php
+Route::patch('/tasks/{taskId}/assign', [TaskController::class, 'assignTask'])->name('tasks.assign');
 
+/*
+Route::group(['prefix' => 'agent'], function () {
 
+    Route::get('/', function () {
+        return app(\App\Http\Controllers\UsersController::class)->index();
+    })->name('agent.index');
+
+    Route::get('/create', function () {
+        return app(\App\Http\Controllers\UsersController::class)->create();
+    })->name('agent.create');
+
+    Route::post('/', function (HttpRequest $request) {
+        return app(\App\Http\Controllers\UsersController::class)->store($request);
+    })->name('agent.store');
+
+    Route::get('/{id}', function ($id) {
+        return app(\App\Http\Controllers\UsersController::class)->show($id);
+    })->name('agent.show');
+
+    Route::get('/{id}/edit', function ($id) {
+        return app(\App\Http\Controllers\UsersController::class)->edit($id);
+    })->name('agent.edit');
+
+    Route::put('/{id}', function (HttpRequest $request, $id) {
+        return app(\App\Http\Controllers\UsersController::class)->update($request, $id);
+    })->name('agent.update');
+
+    Route::delete('/{id}', function (HttpRequest $request, $id) {
+        return app(\App\Http\Controllers\UsersController::class)->destroy($id);
+    })->name('agent.destroy');
+});
+Route::get('roles', function () {
+    return app(\App\Http\Controllers\RolesController::class)->index();
+})->name('roles.index');
+
+Route::get('roles/create', function () {
+    return app(\App\Http\Controllers\RolesController::class)->create();
+})->name('roles.create');
+
+Route::post('roles', function () {
+    return app(\App\Http\Controllers\RolesController::class)->store(request());
+})->name('roles.store');
+
+Route::get('roles/{role}/edit', function (\App\Models\Role $role) {
+    return app(\App\Http\Controllers\RolesController::class)->edit($role);
+})->name('roles.edit');
+
+Route::delete('roles/{role}', function (\App\Models\Role $role) {
+    return app(\App\Http\Controllers\RolesController::class)->destroy($role);
+})->name('roles.destroy');
+
+Route::post('users/{user}/roles', function (\App\Models\User $user) {
+    return app(\App\Http\Controllers\RolesController::class)->assignRole(request(), $user);
+})->name('roles.assign');
+
+Route::delete('users/{user}/roles', function (\App\Models\User $user) {
+    return app(\App\Http\Controllers\RolesController::class)->removeRole(request(), $user);
+})->name('roles.remove');
+
+Route::get('roles/list', function () {
+    return app(\App\Http\Controllers\RolesController::class)->list();
+})->name('roles.list');
+*/
 
 
